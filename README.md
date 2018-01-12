@@ -19,13 +19,16 @@ https://opensource.guide/
 General links for reference and consideration:
 
 Ethereum in all its glory: https://github.com/ethereum
+
 Alpha Casper FFG Testnet Instructions: https://hackmd.io/s/Hk6UiFU7z#running-a-node
+
 Next-gen Python EVM in the making: https://github.com/ethereum/py-evm
 
 
 Languages:
 
 Experimental Smart Contragt Programming Language: https://github.com/ethereum/vyper
+
 Battle-worn Smart Contract Programming Language: https://github.com/ethereum/solidity
 
 
