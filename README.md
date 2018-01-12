@@ -11,5 +11,24 @@ What we are building here is working more or less like this:
 Some basic stuff for getting along smoothly:
 http://nvie.com/files/Git-branching-model.pdf
 
+
 Some more stuff concerning open source communities:
 https://opensource.guide/
+
+
+General links for reference and consideration:
+
+Ethereum in all its glory: https://github.com/ethereum
+Alpha Casper FFG Testnet Instructions: https://hackmd.io/s/Hk6UiFU7z#running-a-node
+Next-gen Python EVM in the making: https://github.com/ethereum/py-evm
+
+
+Languages:
+
+Experimental Smart Contragt Programming Language: https://github.com/ethereum/vyper
+Battle-worn Smart Contract Programming Language: https://github.com/ethereum/solidity
+
+
+
+
+
