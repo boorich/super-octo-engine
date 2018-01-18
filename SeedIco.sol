@@ -7,16 +7,17 @@ TODO:
 - Investors recieve 1 DEVCOIN per 1 ETHER
 - In case that we need to increase the overall deposit because an investor wants to send more then waht would be 25%
   we need to lock the suprplus and allow all other investors to top up their deposits so
+- Embed Identity Layer (uPort, Jolocom) to prevent users from exploiting Deposit function
 - DEVCOINs grant their owners the right to vote on upcoming development tasks (yes/no and amount of funding)
 - DEVCOINS can be sold anytime, ubder the 25% rule, but they will only yield 1 ETH back during development
 - After the solution is live, DEVCOINS are "delegated" to the main Smart Contract that controls all payment of the solution and
-  this is when DEVCOINS rise or decrease in value according to success of sultion
-- 
+  this is when DEVCOINS rise or decrease in value according to success of solution
 
 
 Testnet --> ROPSTEN:
 - put information here
 
+**/
 
 contract SeedIco {
 
