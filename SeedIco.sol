@@ -117,11 +117,6 @@ contract SeedICO is ERC20 {
         Transfer(address(this), msg.sender, msg.value);
     }
 
-    // create Devcoin
-    function createDevcoin() {
-        // convert 1 Eth to 1 DC
-    }
-
     // raise total Deposit
     function raiseDeposit() {
         // lock funds that violate 25% rule and allow other Devcoin-Qwners to jointly increase deposit
