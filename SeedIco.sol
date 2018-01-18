@@ -99,19 +99,22 @@ contract ERC20 {
         return true;
     }
 }
-contract SeedIco is ERC20 {
+contract SeedICO is ERC20 {
 
-    // Address of owner
-    address public owner;
-    
-    // Constructor
+    uint256 public maxSupply;
 
+    function SeedICO(uint256 _maxSupply) {
+        maxSupply = _maxSupply;
+    }
 
     // Modifiers: only allows Owner/Pool/Contract to call certain functions
 
-    // Deposit
+    // Lock ETH in contract and return DevTokens
     function () public payable {
-        // drop your Ether here this is the Token-Sale
+        balanceOf[msg.sender].add(msg.value);
+        totalSupply = totalSupply.add(msg.value);
+        require(totalSupply < maxSupply);
+        Transfer(address(this), msg.sender, msg.value);
     }
 
     // create Devcoin
