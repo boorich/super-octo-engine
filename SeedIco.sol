@@ -102,38 +102,53 @@ contract ERC20 {
 contract SeedICO is ERC20 {
 
     uint256 public maxSupply;
+    uint256 public emergencyWithdrawal;
+    uint256 public maxStake;
+    uint256 public maxSimpleInvestment;
+    address public devs;
 
-    function SeedICO(uint256 _maxSupply) {
+    function SeedICO(uint256 _maxSupply, uint256 _maxStake, uint256 _maxSimpleInvestment, address _devs) {
+        emergencyWithdrawal = now;
         maxSupply = _maxSupply;
+        maxStake = _maxStake;
+        maxSimpleInvestment = _maxSimpleInvestment;
+        devs = _devs;
     }
 
     // Modifiers: only allows Owner/Pool/Contract to call certain functions
+    modifier onlyDev {
+        require(msg.sender == devs);
+        _;
+    }
 
     // Lock ETH in contract and return DevTokens
     function () public payable {
         balanceOf[msg.sender].add(msg.value);
         totalSupply = totalSupply.add(msg.value);
+
         require(totalSupply < maxSupply);
+        // up to 5 Ethers can be deposited
+        if (balanceOf[msg.sender] > maxSimpleInvestment) {
+            // If user wants to deposit more than 5 Ether, he cannot deposit more than 25% of the total supply
+            require(balanceOf[msg.sender] < totalSupply.mul(25)/100);
+        }
         Transfer(address(this), msg.sender, msg.value);
     }
 
-    // raise total Deposit
-    function raiseDeposit() {
-        // lock funds that violate 25% rule and allow other Devcoin-Qwners to jointly increase deposit
+    // Allows devs to withdraw 1 ether per week in case of an emergency or a malicous attack that prevents developers to access ETH in the contract at all
+    function emergencyWithdraw() public onlyDev {
+        if (now.sub(emergencyWithdrawal) > 7 days) {
+            emergencyWithdrawal = now;
+            devs.transfer(1 ether);
+        }
     }
-
-    // allow Vote
-    function allowVote() {
-        // grant the right to and execute voting on upcoming development tasks
-    }    
-
-    // delegate Devcoin
-    function delegateDevcoin() {
-        // delegate Devcoin to successor contract (solution main contract) to use as stake in calculating the owner's access to profits of the solution
+}
+contract Voting is SeedICO {
+    // TODO
+    function Voting() {
+        // TODO
     }
+}
+contract DevRevToken is Voting {
 
-    // delegate Devcoin
-    function delegateDevcoin() {
-        // delegate Devcoin to successor contract to use as stake in calculating the access to profits of the solution
-    }    
 }
