@@ -2,11 +2,6 @@ pragma solidity ^0.4.18;
 
 /**
 TODO:
-- Investors can invest in project by sending ETHER
-- Investors can never invest more then 25% of the total deposited ETHER
-- Investors recieve 1 DEVCOIN per 1 ETHER
-- In case that we need to increase the overall deposit because an investor wants to send more then waht would be 25%
-  we need to lock the suprplus and allow all other investors to top up their deposits so
 - DEVCOINs grant their owners the right to vote on upcoming development tasks (yes/no and amount of funding)
 - DEVCOINS can be sold anytime, ubder the 25% rule, but they will only yield 1 ETH back during development
 - After the solution is live, DEVCOINS are "delegated" to the main Smart Contract that controls all payment of the solution and
@@ -34,6 +29,8 @@ library SafeMath {
     }
 }
 
+
+// Basic ERC20 functions
 contract ERC20 {
 
     using SafeMath for uint256;
@@ -41,22 +38,27 @@ contract ERC20 {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 
-    // This creates a mapping with all balances
+    // mapping of all balances
     mapping (address => uint256) public balanceOf;
-    // Another mapping with spending allowances
+    // mapping of spending allowances
     mapping (address => mapping (address => uint256)) public allowance;
     // The total supply of the token
     uint256 public totalSupply;
 
     // Some variables for nice wallet integration
-    string public name = "DevToken";          // Set the name for display purposes
-    string public symbol = "DT" ;             // Set the symbol for display purposes
-    uint8 public decimals = 18;                // Amount of decimals for display purposes
+    string public name;          // name of token
+    string public symbol;        // symbol of token
+    uint8 public decimals;       // decimals of token
 
+    // constructor setting token variables
     function ERC20() {
+        name = "DevToken";
+        symbol = "DT";
+        decimals = 18;
         totalSupply = 0;
     }
-    // Send coins
+
+    // send tokens
     function transfer(address _to, uint256 _value) public returns (bool success) {
         require(_to != 0x0);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_value);
@@ -64,7 +66,7 @@ contract ERC20 {
         Transfer(msg.sender, _to, _value);
         return true;
     }
-
+    // transfer tokens with allowances
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         require(_to != 0x0);
         balanceOf[_to] = balanceOf[_to].add(_value);
@@ -74,7 +76,7 @@ contract ERC20 {
         return true;
     }
 
-        // Approve that others can transfer _value tokens for the msg.sender
+    // approve that others can transfer _value tokens for the msg.sender
     function approve(address _spender, uint256 _value) public returns (bool success) {
         require((_value == 0) || (allowance[msg.sender][_spender] == 0));
         allowance[msg.sender][_spender] = _value;
@@ -99,14 +101,25 @@ contract ERC20 {
         return true;
     }
 }
-contract SeedICO is ERC20 {
 
+// DevToken functions which are active during development phase
+contract DevToken is ERC20 {
+
+    // TODO: implement exchange rate, shouldn't be changable via voting function
+
+    // maximum supply of the token
     uint256 public maxSupply;
+    // time since the last emergency withdrawal
     uint256 public emergencyWithdrawal;
+    // maximum stake someone can have of all tokens (in percent)
     uint256 public maxStake;
+    // the maximum amount someone can deposit before the stake percentage starts to count
+    // TODO: possible security risk? If someone in the beginning gets to more than 50% he can manipulate all variables during voting
     uint256 public maxSimpleInvestment;
+    // address of the developers
     address public devs;
 
+    // constructor setting contract variables
     function SeedICO(uint256 _maxSupply, uint256 _maxStake, uint256 _maxSimpleInvestment, address _devs) {
         emergencyWithdrawal = now;
         maxSupply = _maxSupply;
@@ -115,27 +128,30 @@ contract SeedICO is ERC20 {
         devs = _devs;
     }
 
-    // Modifiers: only allows Owner/Pool/Contract to call certain functions
+    // modifiers: only allows Owner/Pool/Contract to call certain functions
     modifier onlyDev {
         require(msg.sender == devs);
         _;
     }
 
-    // Lock ETH in contract and return DevTokens
+    // lock ETH in contract and return DevTokens
     function () public payable {
+        // adds the amount of ETH sent as DevToken value and increases total supply
         balanceOf[msg.sender].add(msg.value);
         totalSupply = totalSupply.add(msg.value);
 
+        // fails if total supply surpasses maximum supply
         require(totalSupply < maxSupply);
         // up to 5 Ethers can be deposited
         if (balanceOf[msg.sender] > maxSimpleInvestment) {
-            // If user wants to deposit more than 5 Ether, he cannot deposit more than 25% of the total supply
-            require(balanceOf[msg.sender] < totalSupply.mul(25)/100);
+            // If user wants to deposit more than 5 Ether, he cannot deposit more than X% of the total supply
+            require(balanceOf[msg.sender] < totalSupply.mul(maxStake)/100);
         }
+        // transfer event
         Transfer(address(this), msg.sender, msg.value);
     }
 
-    // Allows devs to withdraw 1 ether per week in case of an emergency or a malicous attack that prevents developers to access ETH in the contract at all
+    // allows devs to withdraw 1 ether per week in case of an emergency or a malicous attack that prevents developers to access ETH in the contract at all
     function emergencyWithdraw() public onlyDev {
         if (now.sub(emergencyWithdrawal) > 7 days) {
             emergencyWithdrawal = now;
@@ -143,12 +159,39 @@ contract SeedICO is ERC20 {
         }
     }
 }
-contract Voting is SeedICO {
-    // TODO
-    function Voting() {
-        // TODO
+
+// voting implementation of DevToken contract
+contract VotingContract is DevToken {
+    // TODO: commenting
+    struct Voting {
+        string name;
+        bool running;
+        uint256 parameter;
+        mapping(address => uint256) voted;
     }
+
+    Voting maxSupplyVoting;
+    Voting maxStakeVoting;
+    Voting maxSimpleInvestmentVoting;
+
+    function VotingContract() {
+        maxSupplyVoting = Voting({name: "maxSupply", running: false, parameter: 0});
+        maxStakeVoting = Voting({name: "maxStake", running: false, parameter: 0});
+        maxSimpleInvestmentVoting = Voting({name: "maxSimpleInvestment", running: false, parameter: 0});
+    }
+
+    function startVoting() {}
+    function Vote() {}
+    function endVote() {}
+
 }
-contract DevRevToken is Voting {
+
+// RevToken functions which are active after development phase
+contract RevToken is ERC20 {
+    // TODO
+}
+
+// DevRevToken combines DevToken and RevToken into one token
+contract DevRevToken is VotingContract, RevToken {
 
 }
