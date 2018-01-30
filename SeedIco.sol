@@ -51,7 +51,7 @@ contract ERC20 {
     uint8 public decimals;       // decimals of token
 
     // constructor setting token variables
-    function ERC20() {
+    function ERC20() public {
         name = "DevToken";
         symbol = "DT";
         decimals = 18;
@@ -118,7 +118,7 @@ contract DevToken is ERC20 {
     mapping(address => bool) blacklist;
 
     // constructor setting contract variables
-    function SeedICO(uint256 _maxSupply, uint256 _maxStake, uint256 _maxSimpleInvestment, address _devs) {
+    function SeedICO(uint256 _maxSupply, uint256 _maxStake, uint256 _maxSimpleInvestment, address _devs) public {
         emergencyWithdrawal = now;
         maxSupply = _maxSupply;
         maxStake = _maxStake;
@@ -178,9 +178,9 @@ contract Voting is DevToken {
         // bool if the poll is a yes/no poll
         bool boolVote;
         // range of values acceptable in poll
-        // when there is no need to define a range, then range = []
+        // when there is no need to define a range, then range = [0,0]
         // when the poll is a yes/no poll the range is [0,1], 0 is no, 1 is yes
-        int256[] range;
+        uint256[2] range;
         // time since last poll started
         uint256 lastPoll;
         // duration of current poll
@@ -195,11 +195,11 @@ contract Voting is DevToken {
     Poll[] public polls;
 
     // constructor: saving all possible votes
-    function VotingContract() {
-        polls.push(Voting({name: "maxSupply", running: false, boolVote: false, range: [], lastPoll: 0, pollDuration: 0, parameter: 0}));
-        polls.push(Voting({name: "maxStake", running: false, boolVote: false, range: [10,49], lastPoll: 0, pollDuration: 0, parameter: 0}));
-        polls.push(Voting({name: "maxSimpleInvestment", running: false, boolVote: false, range: [1,50], lastPoll: 0, pollDuration: 0, parameter: 0}));
-        polls.push(Voting({name: "finishDevelopment", running: false, boolVote: true, range: [0,1], lastPoll: 0, pollDuration: 0, parameter:0}));
+    function Voting() public {
+        polls.push(Poll({name: "maxSupply", running: false, boolVote: false, range: [uint256(0),uint256(0)], lastPoll: 0, pollDuration: 0, parameter: 0}));
+        polls.push(Poll({name: "maxStake", running: false, boolVote: false, range: [uint256(10),uint256(49)], lastPoll: 0, pollDuration: 0, parameter: 0}));
+        polls.push(Poll({name: "maxSimpleInvestment", running: false, boolVote: false, range: [uint256(1),uint256(50)], lastPoll: 0, pollDuration: 0, parameter: 0}));
+        polls.push(Poll({name: "finishDevelopment", running: false, boolVote: true, range: [uint256(0),uint256(1)], lastPoll: 0, pollDuration: 0, parameter:0}));
     }
 
     // start of a new poll, takes poll.name as an input argument
@@ -211,7 +211,7 @@ contract Voting is DevToken {
                 // requires polls.running to be false
                 require(!polls[i].running);
                 // allows one poll of a kind in 4 weeks
-                require(now.sub(lastPoll) > 4 weeks);
+                require(now.sub(polls[i].lastPoll) > 4 weeks);
                 // resets last poll timestamp
                 polls[i].lastPoll = now;
                 // resets poll duration timestamp
@@ -224,7 +224,7 @@ contract Voting is DevToken {
     }
 
     // TODO: implement voting count
-    function Vote(string _name, uint256 _vote) public {
+    function vote(string _name, uint256 _vote) public {
         for (uint256 i = 0; i < polls.length; i++) {
             if (polls[i].name == _name) {
                 require(polls[i].running);
@@ -266,7 +266,7 @@ contract Voting is DevToken {
 
     // constant function: returns all current running polls in a string array
     function runningVotes() public view returns(string[]) {
-        string[] activePolls;
+        string[] memory activePolls;
         for (uint256 i = 0; i < polls.length; i++) {
             if (polls[i].running) {
                 if (now.sub(polls[i].pollDuration) < 1 weeks) {
