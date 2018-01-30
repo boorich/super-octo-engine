@@ -175,12 +175,11 @@ contract Voting is DevToken {
         string name;
         // bool if poll is currently running 
         bool running;
-        // bool if the poll is a yes/no poll
-        bool boolVote;
         // range of values acceptable in poll
-        // when there is no need to define a range, then range = [0,0]
-        // when the poll is a yes/no poll the range is [0,1], 0 is no, 1 is yes
-        uint256[2] range;
+        // if max = 0, there is no maximum
+        // when the poll is a yes/no poll, then min = 0 and max = 1, 0 is no, 1 is yes
+        uint256 min;
+        uint256 max;
         // time since last poll started
         uint256 lastPoll;
         // duration of current poll
@@ -196,87 +195,64 @@ contract Voting is DevToken {
 
     // constructor: saving all possible votes
     function Voting() public {
-        polls.push(Poll({name: "maxSupply", running: false, boolVote: false, range: [uint256(0),uint256(0)], lastPoll: 0, pollDuration: 0, parameter: 0}));
-        polls.push(Poll({name: "maxStake", running: false, boolVote: false, range: [uint256(10),uint256(49)], lastPoll: 0, pollDuration: 0, parameter: 0}));
-        polls.push(Poll({name: "maxSimpleInvestment", running: false, boolVote: false, range: [uint256(1),uint256(50)], lastPoll: 0, pollDuration: 0, parameter: 0}));
-        polls.push(Poll({name: "finishDevelopment", running: false, boolVote: true, range: [uint256(0),uint256(1)], lastPoll: 0, pollDuration: 0, parameter:0}));
+        polls.push(Poll({name: "maxSupply", running: false, min: totalSupply, max: 0, lastPoll: now, pollDuration: now, parameter: 0}));
+        polls.push(Poll({name: "maxStake", running: false, min: 1, max: 49, lastPoll: now, pollDuration: now, parameter: 0}));
+        polls.push(Poll({name: "maxSimpleInvestment", running: false, min: 1, max: 100, lastPoll: now, pollDuration: now, parameter: 0}));
+        polls.push(Poll({name: "finishDevelopment", running: false, min: 0, max: 1, lastPoll: now, pollDuration: now, parameter:0}));
     }
 
+    // constant functions for ui interface
+
+    // returns number of polls
+    function getPollCount() public view returns(uint256) {
+        return polls.length;
+    }
+    // returns name of poll
+    function getPollName(uint256 _index) public view returns(string) {
+        return polls[_index].name;
+    }
+    // returns state of poll
+    function getPollState(uint256 _index) public view returns(bool) {
+        return polls[_index].running;
+    }
+    // ...........
+
+
+
     // start of a new poll, takes poll.name as an input argument
-    function startVoting(string _name) public {
-        // iterates through all polls
-        for (uint256 i = 0; i < polls.length; i++) {
-            // gets the poll whose name is equal to the input parameter _name
-            if (polls[i].name == _name) {
-                // requires polls.running to be false
-                require(!polls[i].running);
-                // allows one poll of a kind in 4 weeks
-                require(now.sub(polls[i].lastPoll) > 4 weeks);
-                // resets last poll timestamp
-                polls[i].lastPoll = now;
-                // resets poll duration timestamp
-                polls[i].pollDuration = now;
-                polls[i].running = true;
-            }
-            // breaks loop to save gas
-            break;
-        }
+    function startVoting(uint256 _index) public {
+        // requires polls.running to be false
+        require(!polls[_index].running);
+        // allows one poll of a kind in 4 weeks
+        require(now.sub(polls[_index].lastPoll) > 4 weeks);
+        // resets last poll timestamp
+        polls[_index].lastPoll = now;
+        // resets poll duration timestamp
+        polls[_index].pollDuration = now;
+        polls[_index].running = true;
     }
 
     // TODO: implement voting count
-    function vote(string _name, uint256 _vote) public {
-        for (uint256 i = 0; i < polls.length; i++) {
-            if (polls[i].name == _name) {
-                require(polls[i].running);
-                // if poll is running for longer than 1 week, the poll ends
-                if (now.sub(polls[i].pollDuration) > 1 weeks) {
-                    endVote(_name);
-                } else {
-                    // the last vote of msg.sender has to be longer than 8 days (-> msg.sender can only vote once per poll)
-                    require(now.sub(polls[i].lastVote[msg.sender]) > 8 days);
-                    // checks if vote has range
-                    if (polls[i].range.length == 0) {
+    function vote(uint256 _index, uint256 _vote) public {
+        require(polls[_index].running);
+        // if poll is running for longer than 1 week, the poll ends
+        if (now.sub(polls[_index].pollDuration) > 1 weeks) {
+            endVote(_index);
+        } else {
+            // the last vote of msg.sender has to be longer than 8 days (-> msg.sender can only vote once per poll)
+            require(now.sub(polls[_index].lastVote[msg.sender]) > 8 days);
 
-                    } else {
-
-                    }
-                }
-            }
-            break;
         }
     }
 
     // TODO; setting variables after votes have finished
-    function endVote(string _name) public {
-        // iterates through all polls
-        for (uint256 i = 0; i < polls.length; i++) {
-            // gets the poll whose name is equal to the input parameter _name
-            if (polls[i].name == _name) {
-                // requires polls.running to be true
-                require(polls[i].running);
-                // poll ends after 1 week
-                require(now.sub(polls[i].pollDuration) > 1 weeks);
-                polls[i].running = false;
-            }
-            // breaks loop to save gas
-            break;
-        }
+    function endVote(uint256 _index) public {
+        // requires polls.running to be true
+        require(polls[_index].running);
+        // poll ends after 1 week
+        require(now.sub(polls[_index].pollDuration) > 1 weeks);
+        polls[_index].running = false;
     }
-
-
-    // constant function: returns all current running polls in a string array
-    function runningVotes() public view returns(string[]) {
-        string[] memory activePolls;
-        for (uint256 i = 0; i < polls.length; i++) {
-            if (polls[i].running) {
-                if (now.sub(polls[i].pollDuration) < 1 weeks) {
-                    activePolls.push(polls[i].name);
-                }
-            }
-        }
-        return activePolls;
-    }
-
 }
 
 // RevToken functions which are active after development phase
