@@ -233,9 +233,9 @@ contract Voting is DevToken {
                     endVote(_name);
                 } else {
                     // the last vote of msg.sender has to be longer than 8 days (-> msg.sender can only vote once per poll)
-                    require(now.sub(lastVote[msg.sender]) > 8 days);
+                    require(now.sub(polls[i].lastVote[msg.sender]) > 8 days);
                     // checks if vote has range
-                    if (range.length == 0) {
+                    if (polls[i].range.length == 0) {
 
                     } else {
 
@@ -267,7 +267,7 @@ contract Voting is DevToken {
     // constant function: returns all current running polls in a string array
     function runningVotes() public view returns(string[]) {
         string[] activePolls;
-        for (uint256 i = 0; i < polls.length; i++) {
+        for (uint256 i = 0; i < polls.length; i++) {
             if (polls[i].running) {
                 if (now.sub(polls[i].pollDuration) < 1 weeks) {
                     activePolls.push(polls[i].name);
