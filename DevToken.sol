@@ -63,8 +63,6 @@ contract DevToken is Token {
 
     // address of the developers
     address public devs;
-    // allows for addresses to get banned
-    mapping(address => bool) banned;
     // maximum supply of the token
     uint256 public maxSupply;
     // time since the last emergency withdrawal
@@ -72,7 +70,6 @@ contract DevToken is Token {
     // maximum stake someone can have of all tokens (in percent)
     uint256 public maxStake;
     // the maximum amount someone can deposit before the stake percentage starts to count
-    // TODO: possible security risk? If someone in the beginning gets to more than 50% he can manipulate all variables during voting
     uint256 public maxSimpleInvestment;
 
     // constructor setting contract variables
@@ -92,7 +89,7 @@ contract DevToken is Token {
     }
     modifier onlyTokenHolder {
         require(balanceOf[msg.sender] > 0);
-        require(!banned[msg.sender]);
+        // require(!banned[msg.sender]);
         _;
     }
 
@@ -172,7 +169,7 @@ contract Voting is DevToken {
         bool active;
     }
 
-    struct acceptedProposal {
+    struct AcceptedProposal {
         // ID of proposal
         uint256 ID;
         // ID of old proposal
@@ -191,7 +188,7 @@ contract Voting is DevToken {
 
     // array of polls
     Proposal[] public proposals;
-    acceptedProposal[] public acceptedProposals;
+    AcceptedProposal[] public acceptedProposals;
 
     // constructor
     function Voting(uint256 _proposalDuration, uint256 _minVotes, uint256 _confirmationAmount) public {
@@ -202,67 +199,90 @@ contract Voting is DevToken {
 
     // propose a new development task
     function propose(string _description) public onlyTokenHolder {
+
         // allows one proposal per week and resets value after successful proposal
         require(now.sub(lastProposal[msg.sender]) > proposalDuration);
         lastProposal[msg.sender] = now;
+
         // saves ID of proposal which is equal to the array index
-        uint256 _ID = proposals.length;
+        uint256 ID = proposals.length;
+
         // initializes new proposal as a struct and pushes it into the proposal array
-        proposals.push(Proposal({ID: _ID, description: _description, value: 0, start: now, voteCount: 0, yes: 0, no: 0, active: true}));
+        proposals.push(Proposal({ID: ID, description: _description, value: 0, start: now, voteCount: 0, yes: 0, no: 0, active: true}));
+
         // event generated for proposal creation
-        ProposalCreation(_ID, _description);
+        ProposalCreation(ID, _description);
+
     }
 
     // vote on a development task
     function vote(uint256 _ID, uint256 _value) public onlyTokenHolder {
+
         // proposal has to be active
         require(proposals[_ID].active);
+
         // proposal has to be active less than one week
         require(now.sub(proposals[_ID].start) < proposalDuration);
+
         // checks if tokenholder has already voted
         require(!proposals[_ID].voted[msg.sender]);
         // registers vote
         proposals[_ID].voted[msg.sender] = true;
+
         // if the value is 0 it's considered no
         if (_value > 0) {
+
             // increment count of yes votes to calculate average dev-payout
             proposals[_ID].voteCount = proposals[_ID].voteCount.add(1);
+
             // registers the balance of msg.sender as a yes vote
             proposals[_ID].yes = proposals[_ID].yes.add(balanceOf[msg.sender]);
+
             // adds desired value and adds it to average dev-payout
             proposals[_ID].value = proposals[_ID].value.add(_value);
+
         } else {
             // registers the balance of msg.sender as a no vote
             proposals[_ID].no = proposals[_ID].no.add(balanceOf[msg.sender]);
         }
         // event generated for tokenholder vote
         UserVote(_ID, msg.sender, _value);
+
     }
+
 
     // end voting for a development task
     function end(uint256 _ID) public onlyTokenHolder {
+
         // requires proposal to be running for a week
         require(now.sub(proposals[_ID].start) >= proposalDuration);
+
         // requires proposal to be active
         require(proposals[_ID].active);
         proposals[_ID].active = false;
+
         // rejects proposal if not enough people voted on it
         if (proposals[_ID].voteCount < minVotes) {
             // event generation
             RejectedProposal(_ID, proposals[_ID].description);
+
         // compares yes and no votes
         } else if (proposals[_ID].yes > proposals[_ID].no) {
+
             // calculates average of all uservotes 
             uint256 average = proposals[_ID].value / proposals[_ID].voteCount;
+
             // saves proposal in acceptedProposals array
             uint256 newID = acceptedProposals.length;
-            acceptedProposals.push(acceptedProposal({ID: newID, proposalID: _ID, description: proposals[_ID].description, value: average, confirmationCount: 0, rewarded: false}));
+            acceptedProposals.push(AcceptedProposal({ID: newID, proposalID: _ID, description: proposals[_ID].description, value: average, confirmationCount: 0, rewarded: false}));
             // event generation
             SuccessfulProposal(_ID, newID, average);
+
         } else {
             // event generation
             RejectedProposal(_ID, proposals[_ID].description);
         }
+    
     }
 
 }
