@@ -37,8 +37,6 @@ contract Token {
 
     // mapping of all balances
     mapping (address => uint256) public balanceOf;
-    // mapping of spending allowances
-    mapping (address => mapping (address => uint256)) public allowance;
     // The total supply of the token
     uint256 public totalSupply;
 
@@ -77,7 +75,6 @@ contract DevToken is Token {
         maxSupply = _maxSupply;
         maxStake = _maxStake;
         maxSimpleInvestment = _maxSimpleInvestment;
-        devs = _devs;
     }
 
     // modifiers: only allows Owner/Pool/Contract to call certain functions
