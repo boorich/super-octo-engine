@@ -1,11 +1,9 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.21;
 
 /**
-TODO:
-- DEVCOINs grant their owners the right to vote on upcoming development tasks (yes/no and amount of funding)
-- DEVCOINS can be sold anytime, ubder the 25% rule, but they will only yield 1 ETH back during development
-- After the solution is live, DEVCOINS are "delegated" to the main Smart Contract that controls all payment of the solution and
-  this is when DEVCOINS rise or decrease in value according to success of sultion
+To Implement: DevTokens are non tradable and only for voting purposes. 
+The user can always exchange his DevTokens for RevTokens which are tradable
+RevTokens give the right to collect a dividend
  */
 
 // Safe Math library that automatically checks for overflows and underflows
@@ -13,18 +11,18 @@ library SafeMath {
     // Safe multiplication
     function mul(uint256 a, uint256 b) internal pure returns (uint) {
         uint256 c = a * b;
-        assert(a == 0 || c / a == b);
+        require(a == 0 || c / a == b);
         return c;
     }
     // Safe subtraction
     function sub(uint256 a, uint256 b) internal pure returns (uint) {
-        assert(b <= a);
+        require(b <= a);
         return a - b;
     }
     // Safe addition
     function add(uint256 a, uint256 b) internal pure returns (uint) {
         uint256 c = a + b;
-        assert(c>=a && c>=b);
+        require(c>=a && c>=b);
         return c;
     }
 }
@@ -283,6 +281,12 @@ contract Voting is DevToken {
             RejectedProposal(_ID, proposals[_ID].description);
         }
     
+    }
+
+    function returnProposals() view public returns(Proposal[]) {
+
+        return proposals;
+
     }
 
 }
